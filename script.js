@@ -1,108 +1,80 @@
-const apiKey = "33839a7ed2a04472ae2551d7ef680a61"; // Your API key
+const apiKey = "1446a770775aed19e4069f534664dfea"; // Replace with your actual API key
 const blogContainer = document.getElementById("blog_container");
 
 const searchField = document.getElementById("search_input");
 const searchButton = document.getElementById("search_button");
 
+// Fetch random news articles
 async function fetchRandomNews() {
   try {
-    // Construct the API URL to fetch top headlines
-    const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&pageSize=20&apikey=${apiKey}`;
-
-    // Fetch data from the News API
+    const apiUrl = `https://gnews.io/api/v4/top-headlines?token=${apiKey}&lang=en&max=10`;
     const response = await fetch(apiUrl);
-
-    // Convert response to JSON
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
-
-    // Log the data to debug if needed
-    console.log(data);
-
-    // Return the articles array from the API response
-    return data.articles;
+    console.log("Random News Data:", data); // Debugging
+    return data.articles || []; // Return articles array from response
   } catch (error) {
-    console.error("Error fetching random news", error);
+    console.error("Error fetching random news:", error);
     return [];
   }
 }
 
-searchButton.addEventListener("click", async () => {
-  const query = searchField.value.trim(); // Correct property for getting input value
-  if (query !== "") {
-    try {
-      const articles = await fetchNewsQuery(query);
-      displayBlogs(articles);
-    } catch (error) {
-      console.log("Error fetching news by query", error);
-    }
-  } else {
-    alert("Please enter a search term"); // Optionally, alert if input is empty
-  }
-});
-
+// Fetch news based on user query
 async function fetchNewsQuery(query) {
   try {
-    // Construct the API URL to fetch top headlines
-    const apiUrl = `https://newsapi.org/v2/everything?q=${query}&pageSize=20&apikey=${apiKey}`;
-
-    // Fetch data from the News API
+    const apiUrl = `https://gnews.io/api/v4/search?q=${query}&token=${apiKey}&lang=en&max=10`;
     const response = await fetch(apiUrl);
-
-    // Convert response to JSON
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
-
-    // Log the data to debug if needed
-    console.log(data);
-
-    // Return the articles array from the API response
-    return data.articles;
+    console.log("Search Query News Data:", data); // Debugging
+    return data.articles || []; // Return articles array from response
   } catch (error) {
-    console.error("Error fetching news by query", error);
+    console.error("Error fetching news by query:", error);
     return [];
   }
 }
 
+// Display blogs
 function displayBlogs(articles) {
   // Clear the blog container before displaying new content
   blogContainer.innerHTML = "";
 
-  // Loop through each article and create a blog card
+  if (!articles || articles.length === 0) {
+    blogContainer.innerHTML = "<p>No articles available.</p>";
+    return;
+  }
+
   articles.forEach((article) => {
-    // Skip articles that are missing title, description, or image
-    if (!article.title || !article.description || !article.urlToImage) {
-      return; // Skip this article if any essential content is missing
+    // Ensure all required fields are available
+    if (!article.title || !article.description || !article.image) {
+      return; // Skip invalid articles
     }
 
-    // Create a new blog card element
     const blogCard = document.createElement("div");
     blogCard.classList.add("blog_card");
 
-    // Create an image element for the article's image
     const img = document.createElement("img");
-    img.src = article.urlToImage || "https://placehold.co/600x400"; // Fallback image if urlToImage is missing
+    img.src = article.image || "https://placehold.co/600x400";
     img.alt = article.title || "No title available";
 
-    // Create a title element for the article
     const title = document.createElement("h2");
-    // Truncate the title if it is longer than 30 characters
     const truncatedTitle =
       article.title.length > 30
-        ? article.title.slice(0, 30) + "..."
+        ? `${article.title.slice(0, 30)}...`
         : article.title;
-    // Set the truncated title as the content of the title element
     title.textContent = truncatedTitle;
 
-    // Create a description element for the article
     const description = document.createElement("p");
-    // Truncate the description if it is longer than 120 characters
     const truncatedDescription =
       article.description.length > 120
-        ? article.description.slice(0, 120) + "..."
+        ? `${article.description.slice(0, 120)}...`
         : article.description;
-    // Set the truncated description as the content of the description element
     description.textContent = truncatedDescription;
 
-    // Append the elements to the blog card
     blogCard.appendChild(img);
     blogCard.appendChild(title);
     blogCard.appendChild(description);
@@ -110,20 +82,31 @@ function displayBlogs(articles) {
       window.open(article.url, "_blank");
     });
 
-    // Append the blog card to the container
     blogContainer.appendChild(blogCard);
   });
 }
 
-// Ensure that the script runs after the DOM is fully loaded
+// Search Button Event Listener
+searchButton.addEventListener("click", async () => {
+  const query = searchField.value.trim();
+  if (query !== "") {
+    try {
+      const articles = await fetchNewsQuery(query);
+      displayBlogs(articles);
+    } catch (error) {
+      console.log("Error fetching news by query:", error);
+    }
+  } else {
+    alert("Please enter a search term");
+  }
+});
+
+// Fetch and display random news on page load
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // Fetch articles from the API
     const articles = await fetchRandomNews();
-
-    // Display the fetched articles
     displayBlogs(articles);
   } catch (error) {
-    console.error("Error fetching random news", error);
+    console.error("Error fetching random news:", error);
   }
 });
